@@ -2,6 +2,8 @@
 
 uniform vec2 resolution;
 
+#define MAX_DISTANCE 999.0
+
 struct Ray {
     vec3 origin;
     vec3 direction;
@@ -16,6 +18,7 @@ struct Shape {
 struct Hit {
     float distanceNear;
     float distanceFar;
+    vec3 normal;
 };
 
 Hit SphereCast(Ray ray, Shape sphere) {
@@ -23,20 +26,52 @@ Hit SphereCast(Ray ray, Shape sphere) {
     float b = dot(oc, ray.direction);
     float c = dot(oc, oc) - sphere.size.x*sphere.size.x;
     float h = b*b - c;
-    if(h<0.0) return Hit(-1.0, -1.0);
+    if(h<0.0) return Hit(-1.0, -1.0, vec3(0.0));
     h = sqrt(h);
-    return Hit(-b-h, -b+h);
+    return Hit(-b-h, -b+h, normalize(sphere.position - (ray.origin + ray.direction*(-b-h))));
+}
+
+Hit BoxCast(Ray ray, Shape box) {
+    vec3 m = 1.0/ray.direction;
+    vec3 n = m*(ray.origin - box.position);
+    vec3 k = abs(m)*box.size;
+    vec3 t1 = -n - k;
+    vec3 t2 = -n + k;
+    float tN = max(max(t1.x, t1.y), t1.z);
+    float tF = min(min(t2.x, t2.y), t2.z);
+    if(tN>tF || tF<0.0) return Hit(-1.0, -1.0, vec3(0.0));
+    vec3 outNormal = sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz);
+    return Hit(tN, tF, outNormal);
+}
+
+vec3 GetLight(Ray ray, Hit hit) {
+    vec3 lightDirection = normalize(vec3(-0.5, -1.0, 0.5));
+
+    float diffuce = dot(hit.normal, lightDirection);
+
+    return vec3(diffuce);
 }
 
 vec3 RayCast(Ray ray) {
-    Shape sphere = Shape(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), 0);
+    Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0));
+
+    Shape sphere = Shape(vec3(2.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), 0);
     Hit hit = SphereCast(ray, sphere);
-    if(hit.distanceNear != -1.0) {
-        return vec3(1.0);
+    if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
+        minHit = hit;
     }
-    else {
+
+    Shape box = Shape(vec3(-2.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), 1);
+    hit = BoxCast(ray, box);
+    if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
+        minHit = hit;
+    }
+
+    if (minHit.distanceNear == MAX_DISTANCE){
         return vec3(0.0);
     }
+
+    return GetLight(ray, minHit);
 }
 
 vec3 Render(vec2 uv) {
