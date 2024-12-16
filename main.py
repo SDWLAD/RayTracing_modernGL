@@ -3,6 +3,8 @@ import moderngl as mgl
 from pygame.locals import *
 import numpy as np
 
+from scene import Scene
+
 class Engine:
     screen_size = (1920, 1080)
 
@@ -27,6 +29,8 @@ class Engine:
         self.prog['resolution'] = self.screen_size
 
         self.vao = self.ctx.simple_vertex_array(self.prog, self.ctx.buffer(np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)), 'in_vert')
+
+        self.scene = Scene(self.prog)
 
     def get_program(self):
         with open(f'program/vertex.glsl') as file:

@@ -15,6 +15,9 @@ struct Shape {
     int type;
 };
 
+const int SHAPE_COUNT = 2;
+uniform Shape shapes[SHAPE_COUNT];
+
 struct Hit {
     float distanceNear;
     float distanceFar;
@@ -44,8 +47,14 @@ Hit BoxCast(Ray ray, Shape box) {
     return Hit(tN, tF, outNormal);
 }
 
+Hit ShapeCast(Ray ray, Shape shape) {
+    if(shape.type == 0) return SphereCast(ray, shape);
+    if(shape.type == 1) return BoxCast(ray, shape);
+    return Hit(-1.0, -1.0, vec3(0.0));
+}
+
 vec3 GetLight(Ray ray, Hit hit) {
-    vec3 lightDirection = normalize(vec3(-0.5, -1.0, 0.5));
+    vec3 lightDirection = normalize(vec3(0.6, -1.0, 0.4));
 
     float diffuce = dot(hit.normal, lightDirection);
 
@@ -55,16 +64,12 @@ vec3 GetLight(Ray ray, Hit hit) {
 vec3 RayCast(Ray ray) {
     Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0));
 
-    Shape sphere = Shape(vec3(2.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), 0);
-    Hit hit = SphereCast(ray, sphere);
-    if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
-        minHit = hit;
-    }
-
-    Shape box = Shape(vec3(-2.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), 1);
-    hit = BoxCast(ray, box);
-    if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
-        minHit = hit;
+    for (int i = 0; i < SHAPE_COUNT; i++) {
+        Shape shape = shapes[i];
+        Hit hit = ShapeCast(ray, shape);
+        if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
+            minHit = hit;
+        }
     }
 
     if (minHit.distanceNear == MAX_DISTANCE){
