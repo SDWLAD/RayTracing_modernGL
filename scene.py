@@ -6,6 +6,7 @@ class Scene:
         self.gameObjects = [
             GameObject((-2, 0, 0), (1, 1, 1), 0),
             GameObject((2, 0, 0), (1, 1, 1), 1),
+            GameObject((0, -5, 0), (0, 1, 0), 2),
         ]
 
         for j,i in enumerate(self.gameObjects):

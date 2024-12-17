@@ -3,6 +3,7 @@ import moderngl as mgl
 from pygame.locals import *
 import numpy as np
 
+from camera import Camera
 from scene import Scene
 
 class Engine:
@@ -25,6 +26,7 @@ class Engine:
 
     def on_init(self):
         self.prog = self.get_program()
+        self.camera = Camera(pg.Vector3(0, 0, -5))
 
         self.prog['resolution'] = self.screen_size
 
@@ -51,9 +53,16 @@ class Engine:
         self.vao.render(mgl.TRIANGLE_STRIP)
         pg.display.flip()
 
+    def update(self):
+        self.prog['cam_pos'] = self.camera.position
+        self.prog['cam_rot'] = self.camera.rotation
+
+        self.camera.update()
+
     def run(self):
         while self.is_running:
             self.handle_events()
+            self.update()
             self.render()
             self.clock.tick(60)
         quit()

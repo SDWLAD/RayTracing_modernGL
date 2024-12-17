@@ -1,6 +1,12 @@
 #version 330 core
 
 uniform vec2 resolution;
+uniform vec3 cam_pos;
+uniform vec3 cam_rot;
+
+void pR(inout vec2 p, float a) {
+	p = cos(a)*p + sin(a)*vec2(p.y, -p.x);
+}
 
 #define MAX_DISTANCE 999.0
 
@@ -15,7 +21,7 @@ struct Shape {
     int type;
 };
 
-const int SHAPE_COUNT = 2;
+const int SHAPE_COUNT = 3;
 uniform Shape shapes[SHAPE_COUNT];
 
 struct Hit {
@@ -47,9 +53,12 @@ Hit BoxCast(Ray ray, Shape box) {
     return Hit(tN, tF, outNormal);
 }
 
+
+
 Hit ShapeCast(Ray ray, Shape shape) {
     if(shape.type == 0) return SphereCast(ray, shape);
     if(shape.type == 1) return BoxCast(ray, shape);
+    if(shape.type == 2) return BoxCast(ray, shape);
     return Hit(-1.0, -1.0, vec3(0.0));
 }
 
@@ -80,7 +89,11 @@ vec3 RayCast(Ray ray) {
 }
 
 vec3 Render(vec2 uv) {
-    Ray ray = Ray(vec3(0.0, 0.0, -5), normalize(vec3(uv, 1.0)));
+    Ray ray = Ray(vec3(cam_pos), normalize(vec3(uv, 1.0)));
+
+    pR(ray.direction.yz, cam_rot.x);
+    pR(ray.direction.xz, cam_rot.y);
+
 
     vec3 color = RayCast(ray);
 
