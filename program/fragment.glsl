@@ -53,12 +53,14 @@ Hit BoxCast(Ray ray, Shape box) {
     return Hit(tN, tF, outNormal);
 }
 
-
+Hit PlaneCast(Ray ray, Shape plane) {
+    return Hit(-(dot(ray.origin,plane.position)-5)/dot(ray.direction,plane.position), 1.0, plane.position);
+}
 
 Hit ShapeCast(Ray ray, Shape shape) {
     if(shape.type == 0) return SphereCast(ray, shape);
     if(shape.type == 1) return BoxCast(ray, shape);
-    if(shape.type == 2) return BoxCast(ray, shape);
+    if(shape.type == 2) return PlaneCast(ray, shape);
     return Hit(-1.0, -1.0, vec3(0.0));
 }
 
@@ -76,7 +78,7 @@ vec3 RayCast(Ray ray) {
     for (int i = 0; i < SHAPE_COUNT; i++) {
         Shape shape = shapes[i];
         Hit hit = ShapeCast(ray, shape);
-        if(hit.distanceNear != -1.0 && hit.distanceNear < minHit.distanceNear) {
+        if(hit.distanceNear > 0.0 && hit.distanceNear < minHit.distanceNear) {
             minHit = hit;
         }
     }
