@@ -3,6 +3,7 @@
 uniform vec2 resolution;
 uniform vec3 cam_pos;
 uniform vec3 cam_rot;
+uniform sampler2D skyTexture;
 
 void pR(inout vec2 p, float a) {
 	p = cos(a)*p + sin(a)*vec2(p.y, -p.x);
@@ -71,6 +72,12 @@ vec3 GetLight(Ray ray, Hit hit) {
 
     return vec3(diffuce);
 }
+vec3 getSky(vec3 rd){
+    vec2 uv = vec2(atan(rd.x, rd.z), asin(-rd.y)*2.)/3.14159265;
+    uv = uv*0.5-0.5;
+    vec3 col = texture2D(skyTexture, uv).rgb;
+    return col;
+}
 
 vec3 RayCast(Ray ray) {
     Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0));
@@ -84,7 +91,7 @@ vec3 RayCast(Ray ray) {
     }
 
     if (minHit.distanceNear == MAX_DISTANCE){
-        return vec3(0.0);
+        return getSky(ray.direction);
     }
 
     return GetLight(ray, minHit);

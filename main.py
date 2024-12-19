@@ -29,6 +29,8 @@ class Engine:
         self.camera = Camera(pg.Vector3(0, 0, -5))
 
         self.prog['resolution'] = self.screen_size
+        texture = self.ctx.texture((2560, 1280), 4, pg.image.tobytes(pg.image.load('assets/bg.jpg').convert(), 'RGBA'))
+        texture.use(location=0)
 
         self.vao = self.ctx.simple_vertex_array(self.prog, self.ctx.buffer(np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)), 'in_vert')
 
