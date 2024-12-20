@@ -13,7 +13,7 @@ class Engine:
         pg.init()
 
         self.screen = pg.display.set_mode(self.screen_size, DOUBLEBUF | OPENGL | FULLSCREEN, vsync=1)
-        self.ctx = mgl.create_context()
+        self.ctx = mgl.create_context() 
 
         self.clock = pg.time.Clock()
         self.delta_time = 0

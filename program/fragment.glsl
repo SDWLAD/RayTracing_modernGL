@@ -10,6 +10,7 @@ void pR(inout vec2 p, float a) {
 }
 
 #define MAX_DISTANCE 999.0
+#define EPSILON 0.001
 
 struct Ray {
     vec3 origin;
@@ -55,7 +56,7 @@ Hit BoxCast(Ray ray, Shape box) {
 }
 
 Hit PlaneCast(Ray ray, Shape plane) {
-    return Hit(-(dot(ray.origin,plane.position)-5)/dot(ray.direction,plane.position), 1.0, plane.position);
+    return Hit(-(dot(ray.origin,vec3(0, 1, 0))-plane.position.y)/dot(ray.direction,vec3(0, 1, 0)), 0.0, vec3(0, 1, 0));
 }
 
 Hit ShapeCast(Ray ray, Shape shape) {
@@ -79,7 +80,7 @@ vec3 getSky(vec3 rd){
     return col;
 }
 
-vec3 RayCast(Ray ray) {
+Hit RayCast(inout Ray ray) {
     Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0));
 
     for (int i = 0; i < SHAPE_COUNT; i++) {
@@ -90,11 +91,21 @@ vec3 RayCast(Ray ray) {
         }
     }
 
-    if (minHit.distanceNear == MAX_DISTANCE){
-        return getSky(ray.direction);
-    }
+    ray.origin += ray.direction * (minHit.distanceNear - EPSILON);
+    ray.direction = reflect(ray.direction, minHit.normal);
 
-    return GetLight(ray, minHit);
+    return minHit;
+}
+
+vec3 RayTrace(Ray ray){
+    vec3 col = vec3(1.0);
+    for(int i = 0; i < 100; i++)
+    {
+        Hit refCol = RayCast(ray);
+        if(refCol.distanceNear == MAX_DISTANCE) return col * getSky(ray.direction);
+        col *= vec3(1.0);
+    }
+    return col;
 }
 
 vec3 Render(vec2 uv) {
@@ -104,7 +115,7 @@ vec3 Render(vec2 uv) {
     pR(ray.direction.xz, cam_rot.y);
 
 
-    vec3 color = RayCast(ray);
+    vec3 color = RayTrace(ray);
 
     return color;
 }
