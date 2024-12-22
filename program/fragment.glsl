@@ -24,7 +24,7 @@ struct Shape {
     int type;
 };
 
-const int SHAPE_COUNT = 3;
+const int SHAPE_COUNT = 4;
 uniform Shape shapes[SHAPE_COUNT];
 
 struct Hit {
