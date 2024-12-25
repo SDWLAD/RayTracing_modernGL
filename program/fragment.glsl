@@ -17,31 +17,39 @@ struct Ray {
     vec3 direction;
 };
 
-struct Shape {
-    vec3 position;
-    vec3 size;
+struct Material {
     vec3 color;
     int type;
 };
 
-const int SHAPE_COUNT = 4;
+struct Shape {
+    vec3 position;
+    vec3 size;
+    Material material;
+    int type;
+};
+
+const int SHAPE_COUNT = 5;
 uniform Shape shapes[SHAPE_COUNT];
+
 
 struct Hit {
     float distanceNear;
     float distanceFar;
     vec3 normal;
-    vec3 col;
+    Material material;
 };
+
+Hit noHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0), Material(vec3(0.0), 0));
 
 Hit SphereCast(Ray ray, Shape sphere) {
     vec3 oc = ray.origin - sphere.position;
     float b = dot(oc, ray.direction);
     float c = dot(oc, oc) - sphere.size.x*sphere.size.x;
     float h = b*b - c;
-    if(h<0.0) return Hit(-1.0, -1.0, vec3(0.0), sphere.color);
+    if(h<0.0) return noHit;
     h = sqrt(h);
-    return Hit(-b-h, -b+h, normalize(sphere.position - (ray.origin + ray.direction*(-b-h))), sphere.color);
+    return Hit(-b-h, -b+h, normalize(sphere.position - (ray.origin + ray.direction*(-b-h))), sphere.material);
 }
 
 Hit BoxCast(Ray ray, Shape box) {
@@ -52,20 +60,20 @@ Hit BoxCast(Ray ray, Shape box) {
     vec3 t2 = -n + k;
     float tN = max(max(t1.x, t1.y), t1.z);
     float tF = min(min(t2.x, t2.y), t2.z);
-    if(tN>tF || tF<0.0) return Hit(-1.0, -1.0, vec3(0.0), box.color);
+    if(tN>tF || tF<0.0) return noHit;
     vec3 outNormal = sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz);
-    return Hit(tN, tF, outNormal, box.color);
+    return Hit(tN, tF, outNormal, box.material);
 }
 
 Hit PlaneCast(Ray ray, Shape plane) {
-    return Hit(-(dot(ray.origin,vec3(0, 1, 0))-plane.position.y)/dot(ray.direction,vec3(0, 1, 0)), 0.0, vec3(0, 1, 0), plane.color);;
+    return Hit(-(dot(ray.origin,vec3(0, 1, 0))-plane.position.y)/dot(ray.direction,vec3(0, 1, 0)), 0.0, vec3(0, 1, 0), plane.material);
 }
 
 Hit ShapeCast(Ray ray, Shape shape) {
     if(shape.type == 0) return SphereCast(ray, shape);
     if(shape.type == 1) return BoxCast(ray, shape);
     if(shape.type == 2) return PlaneCast(ray, shape);
-    return Hit(-1.0, -1.0, vec3(0.0), shape.color);
+    return noHit;
 }
 
 vec3 GetLight(Ray ray, Hit hit) {
@@ -83,7 +91,7 @@ vec3 getSky(vec3 rd){
 }
 
 Hit RayCast(inout Ray ray) {
-    Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0), vec3(0.0));
+    Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0), Material(vec3(0.0), 0));
 
     for (int i = 0; i < SHAPE_COUNT; i++) {
         Shape shape = shapes[i];
@@ -93,8 +101,14 @@ Hit RayCast(inout Ray ray) {
         }
     }
 
-    ray.origin += ray.direction * (minHit.distanceNear - EPSILON);
-    ray.direction = reflect(ray.direction, minHit.normal);
+    if (minHit.material.type == 0){
+        ray.origin += ray.direction * (minHit.distanceNear - EPSILON);
+        ray.direction = reflect(ray.direction, minHit.normal);
+    }
+    else if (minHit.material.type == 1){
+		ray.origin += ray.direction * (minHit.distanceFar - EPSILON);
+        ray.direction = minHit.normal;
+    }
 
     return minHit;
 }
@@ -105,7 +119,7 @@ vec3 RayTrace(Ray ray){
     {
         Hit refCol = RayCast(ray);
         if(refCol.distanceNear == MAX_DISTANCE) return col * getSky(ray.direction);
-        col *= refCol.col;
+        col *= refCol.material.color;
     }
     return col;
 }
