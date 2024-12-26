@@ -40,7 +40,7 @@ struct Hit {
     Material material;
 };
 
-Hit noHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0), Material(vec3(0.0), 0));
+Hit noHit = Hit(-1.0, -1.0, vec3(0.0), Material(vec3(0.0), 0));
 
 Hit SphereCast(Ray ray, Shape sphere) {
     vec3 oc = ray.origin - sphere.position;
@@ -49,7 +49,7 @@ Hit SphereCast(Ray ray, Shape sphere) {
     float h = b*b - c;
     if(h<0.0) return noHit;
     h = sqrt(h);
-    return Hit(-b-h, -b+h, normalize(sphere.position - (ray.origin + ray.direction*(-b-h))), sphere.material);
+    return Hit(-b-h, -b+h, normalize((ray.origin-sphere.position) + ray.direction * (-b-h)), sphere.material);
 }
 
 Hit BoxCast(Ray ray, Shape box) {
@@ -76,13 +76,6 @@ Hit ShapeCast(Ray ray, Shape shape) {
     return noHit;
 }
 
-vec3 GetLight(Ray ray, Hit hit) {
-    vec3 lightDirection = normalize(vec3(0.6, -1.0, 0.4));
-
-    float diffuce = dot(hit.normal, lightDirection);
-
-    return vec3(diffuce);
-}
 vec3 getSky(vec3 rd){
     vec2 uv = vec2(atan(rd.x, rd.z), asin(-rd.y)*2.)/3.14159265;
     uv = uv*0.5-0.5;
@@ -91,7 +84,7 @@ vec3 getSky(vec3 rd){
 }
 
 Hit RayCast(inout Ray ray) {
-    Hit minHit = Hit(MAX_DISTANCE, -1.0, vec3(0.0), Material(vec3(0.0), 0));
+    Hit minHit = Hit(MAX_DISTANCE, MAX_DISTANCE, vec3(0.0), Material(vec3(0.0), 0));
 
     for (int i = 0; i < SHAPE_COUNT; i++) {
         Shape shape = shapes[i];
@@ -106,8 +99,8 @@ Hit RayCast(inout Ray ray) {
         ray.direction = reflect(ray.direction, minHit.normal);
     }
     else if (minHit.material.type == 1){
-		ray.origin += ray.direction * (minHit.distanceFar - EPSILON);
-        ray.direction = minHit.normal;
+		ray.origin += ray.direction * (minHit.distanceFar + EPSILON);
+        ray.direction = refract(ray.direction, minHit.normal, 1.0 / (1.4));
     }
 
     return minHit;
