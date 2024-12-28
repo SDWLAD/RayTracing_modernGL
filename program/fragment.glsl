@@ -1,12 +1,17 @@
-#version 330 core
+#version 130
 
 uniform vec2 resolution;
 uniform vec3 cam_pos;
 uniform vec3 cam_rot;
 uniform sampler2D skyTexture;
+uniform vec2 u_seed1;
+uniform vec2 u_seed2;
+
+uniform float sample_part;
+uniform sampler2D sample;
 
 void pR(inout vec2 p, float a) {
-	p = cos(a)*p + sin(a)*vec2(p.y, -p.x);
+    p = cos(a)*p + sin(a)*vec2(p.y, -p.x);
 }
 
 #define MAX_DISTANCE 999.0
@@ -20,6 +25,7 @@ struct Ray {
 struct Material {
     vec3 color;
     int type;
+    float strenght;
 };
 
 struct Shape {
@@ -40,7 +46,50 @@ struct Hit {
     Material material;
 };
 
-Hit noHit = Hit(-1.0, -1.0, vec3(0.0), Material(vec3(0.0), 0));
+Hit noHit = Hit(-1.0, -1.0, vec3(0.0), Material(vec3(0.0), 0, 0.0));
+
+uvec4 R_STATE;
+
+uint TausStep(uint z, int S1, int S2, int S3, uint M)
+{
+    uint b = (((z << S1) ^ z) >> S2);
+    return (((z & M) << S3) ^ b);   
+}
+
+uint LCGStep(uint z, uint A, uint C)
+{
+    return (A * z + C); 
+}
+
+vec2 hash22(vec2 p)
+{
+    p += u_seed1.x;
+    vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx+33.33);
+    return fract((p3.xx+p3.yz)*p3.zy);
+}
+
+float random()
+{
+    R_STATE.x = TausStep(R_STATE.x, 13, 19, 12, uint(4294967294));
+    R_STATE.y = TausStep(R_STATE.y, 2, 25, 4, uint(4294967288));
+    R_STATE.z = TausStep(R_STATE.z, 3, 11, 17, uint(4294967280));
+    R_STATE.w = LCGStep (R_STATE.w, uint(1664525), uint(1013904223));
+    return 2.3283064365387e-10 * float((R_STATE.x ^ R_STATE.y ^ R_STATE.z ^ R_STATE.w));
+}
+
+vec3 randomOnSphere() {
+    vec3 rand = vec3(random(), random(), random());
+    float theta = rand.x * 2.0 * 3.14159265;
+    float v = rand.y;
+    float phi = acos(2.0 * v - 1.0);
+    float r = pow(rand.z, 1.0 / 3.0);
+    float x = r * sin(phi) * cos(theta);
+    float y = r * sin(phi) * sin(theta);
+    float z = r * cos(phi);
+    return vec3(x, y, z);
+}
+
 
 Hit SphereCast(Ray ray, Shape sphere) {
     vec3 oc = ray.origin - sphere.position;
@@ -84,7 +133,7 @@ vec3 getSky(vec3 rd){
 }
 
 Hit RayCast(inout Ray ray) {
-    Hit minHit = Hit(MAX_DISTANCE, MAX_DISTANCE, vec3(0.0), Material(vec3(0.0), 0));
+    Hit minHit = Hit(MAX_DISTANCE, MAX_DISTANCE, vec3(0.0), Material(vec3(0.0), 0, 0.0));
 
     for (int i = 0; i < SHAPE_COUNT; i++) {
         Shape shape = shapes[i];
@@ -96,11 +145,14 @@ Hit RayCast(inout Ray ray) {
 
     if (minHit.material.type == 0){
         ray.origin += ray.direction * (minHit.distanceNear - EPSILON);
-        ray.direction = reflect(ray.direction, minHit.normal);
+        vec3 reflected = reflect(ray.direction, minHit.normal);
+        vec3 r = randomOnSphere();
+        vec3 diffuse = r;
+        ray.direction = mix(reflected, diffuse, minHit.material.strenght);
     }
     else if (minHit.material.type == 1){
-		ray.origin += ray.direction * (minHit.distanceFar + EPSILON);
-        ray.direction = refract(ray.direction, minHit.normal, 1.0 / (1.4));
+        ray.origin += ray.direction * (minHit.distanceFar + EPSILON);
+        ray.direction = refract(ray.direction, minHit.normal, 1.0 / (1.0 - minHit.material.strenght));
     }
 
     return minHit;
@@ -131,8 +183,16 @@ vec3 Render(vec2 uv) {
 
 void main(){
     vec2 uv = (2.0 * gl_FragCoord.xy - resolution.xy) / resolution.y;
+    vec2 uvRes = hash22(uv + 1.0) * resolution + resolution;
+	R_STATE.x = uint(u_seed1.x + uvRes.x);
+	R_STATE.y = uint(u_seed1.y + uvRes.x);
+	R_STATE.z = uint(u_seed2.x + uvRes.y);
+	R_STATE.w = uint(u_seed2.y + uvRes.y);
 
     vec3 color = Render(uv);
+
+	vec3 sampleColor = texture(sample, gl_FragCoord.xy).rgb;
+	color = mix(sampleColor, color, 1);
 
     gl_FragColor = vec4(pow(color, vec3(0.4545)), 1);
 }

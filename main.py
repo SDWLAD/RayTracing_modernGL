@@ -59,6 +59,9 @@ class Engine:
         self.prog['cam_pos'] = self.camera.position
         self.prog['cam_rot'] = self.camera.rotation
 
+        self.prog['u_seed1'] = np.random.rand(2)
+        self.prog['u_seed2'] = np.random.rand(2)
+
         self.camera.update()
 
     def run(self):
