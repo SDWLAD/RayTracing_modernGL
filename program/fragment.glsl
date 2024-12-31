@@ -151,6 +151,11 @@ Hit RayCast(inout Ray ray) {
         ray.direction = mix(reflected, diffuse, minHit.material.strenght);
     }
     else if (minHit.material.type == 1){
+        float fresnel = 1.0 - abs(dot(-ray.direction, minHit.normal));
+		if(random() - 0.1 < fresnel * fresnel) {
+			ray.direction = reflect(ray.direction, minHit.normal);
+			return minHit;
+		}
         ray.origin += ray.direction * (minHit.distanceFar + EPSILON);
         ray.direction = refract(ray.direction, minHit.normal, 1.0 / (1.0 - minHit.material.strenght));
     }
