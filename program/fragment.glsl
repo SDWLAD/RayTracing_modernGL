@@ -159,6 +159,9 @@ Hit RayCast(inout Ray ray) {
         ray.origin += ray.direction * (minHit.distanceFar + EPSILON);
         ray.direction = refract(ray.direction, minHit.normal, 1.0 / (1.0 - minHit.material.strenght));
     }
+    else if (minHit.material.type == 2){
+        return minHit;
+    }
 
     return minHit;
 }
@@ -169,6 +172,7 @@ vec3 RayTrace(Ray ray){
     {
         Hit refCol = RayCast(ray);
         if(refCol.distanceNear == MAX_DISTANCE) return col * getSky(ray.direction);
+        if(refCol.material.type == 2) return refCol.material.color;
         col *= refCol.material.color;
     }
     return col;
