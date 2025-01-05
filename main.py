@@ -46,7 +46,7 @@ class Engine:
         return self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
 
     def handle_events(self):
-        for event  in pg.event.get():
+        for event in pg.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 self.is_running = False
 
