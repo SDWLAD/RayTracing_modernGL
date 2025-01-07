@@ -3,12 +3,12 @@
 uniform vec2 resolution;
 uniform vec3 cam_pos;
 uniform vec3 cam_rot;
-uniform sampler2D skyTexture;
+// uniform sampler2D skyTexture;
 uniform vec2 u_seed1;
 uniform vec2 u_seed2;
 
-uniform float sample_part;
 uniform sampler2D sample;
+uniform float sample_part;
 
 void pR(inout vec2 p, float a) {
     p = cos(a)*p + sin(a)*vec2(p.y, -p.x);
@@ -126,9 +126,7 @@ Hit ShapeCast(Ray ray, Shape shape) {
 }
 
 vec3 getSky(vec3 rd){
-    vec2 uv = vec2(atan(rd.x, rd.z), asin(-rd.y)*2.)/3.14159265;
-    uv = uv*0.5-0.5;
-    vec3 col = texture2D(skyTexture, uv).rgb;
+    vec3 col = vec3(0.22, 0.38, 0.7);
     return col;
 }
 
@@ -201,7 +199,7 @@ void main(){
     vec3 color = Render(uv);
 
 	vec3 sampleColor = texture(sample, gl_FragCoord.xy).rgb;
-	color = mix(sampleColor, color, 1);
+	color = mix(sampleColor, color, sample_part);
 
     gl_FragColor = vec4(pow(color, vec3(0.4545)), 1);
 }

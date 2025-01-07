@@ -18,6 +18,7 @@ class Engine:
         self.clock = pg.time.Clock()
         self.delta_time = 0
         self.time = 0
+        self.tick = 1
 
         pg.mouse.set_visible(False)
 
@@ -29,12 +30,18 @@ class Engine:
         self.camera = Camera(pg.Vector3(0, 0, -5))
 
         self.prog['resolution'] = self.screen_size
-        texture = self.ctx.texture((2560, 1280), 4, pg.image.tobytes(pg.image.load('assets/bg.jpg').convert(), 'RGBA'))
-        texture.use(location=0)
+        # texture = self.ctx.texture((2560, 1280), 4, pg.image.tobytes(pg.image.load('assets/bg.jpg').convert(), 'RGBA'))
+        # texture.use(location=0)
 
         self.vao = self.ctx.simple_vertex_array(self.prog, self.ctx.buffer(np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)), 'in_vert')
 
         self.scene = Scene(self.prog)
+
+        self.texture = self.ctx.texture(self.screen_size, 4)  # RGBA формат
+        self.texture.filter = (mgl.LINEAR, mgl.LINEAR)
+
+        # Створення FBO
+        self.fbo = self.ctx.framebuffer(color_attachments=[self.texture])
 
     def get_program(self):
         with open(f'program/vertex.glsl') as file:
@@ -51,7 +58,13 @@ class Engine:
                 self.is_running = False
 
     def render(self):
+        self.fbo.use()
         self.ctx.clear(0, 0, 0)
+        self.vao.render(mgl.TRIANGLE_STRIP)
+
+        self.ctx.screen.use()
+        self.ctx.clear(0.0, 0.0, 0.0)
+        self.texture.use()
         self.vao.render(mgl.TRIANGLE_STRIP)
         pg.display.flip()
 
@@ -62,6 +75,10 @@ class Engine:
         self.prog['u_seed1'] = np.random.rand(2)
         self.prog['u_seed2'] = np.random.rand(2)
 
+        self.prog['sample_part'] = self.tick
+
+        print(self.tick)
+
         self.camera.update()
 
     def run(self):
@@ -70,6 +87,7 @@ class Engine:
             self.update()
             self.render()
             self.clock.tick(60)
+            self.tick += 1
         quit()
 
 if __name__ == '__main__':
