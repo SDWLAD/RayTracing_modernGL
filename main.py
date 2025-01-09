@@ -30,15 +30,14 @@ class Engine:
         self.camera = Camera(pg.Vector3(0, 0, -5))
 
         self.prog['resolution'] = self.screen_size
-        # texture = self.ctx.texture((2560, 1280), 4, pg.image.tobytes(pg.image.load('assets/bg.jpg').convert(), 'RGBA'))
-        # texture.use(location=0)
+        texture = self.ctx.texture((2560, 1280), 4, pg.image.tobytes(pg.image.load('assets/bg.jpg').convert(), 'RGBA'))
+        texture.use(location=0)
 
         self.vao = self.ctx.simple_vertex_array(self.prog, self.ctx.buffer(np.array([[-1, -1], [1, -1], [-1, 1], [1, 1]], dtype=np.float32)), 'in_vert')
 
         self.scene = Scene(self.prog)
 
-        self.texture = self.ctx.texture(self.screen_size, 4)  # RGBA формат
-        self.texture.filter = (mgl.LINEAR, mgl.LINEAR)
+        self.texture = self.ctx.texture(self.screen_size, 4)
 
         # Створення FBO
         self.fbo = self.ctx.framebuffer(color_attachments=[self.texture])
@@ -75,9 +74,7 @@ class Engine:
         self.prog['u_seed1'] = np.random.rand(2)
         self.prog['u_seed2'] = np.random.rand(2)
 
-        self.prog['sample_part'] = self.tick
-
-        print(self.tick)
+        self.prog['sample_part'] = 1
 
         self.camera.update()
 
