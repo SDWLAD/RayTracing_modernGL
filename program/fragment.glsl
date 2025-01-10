@@ -3,7 +3,6 @@
 uniform vec2 resolution;
 uniform vec3 cam_pos;
 uniform vec3 cam_rot;
-uniform sampler2D skyTexture;
 uniform vec2 u_seed1;
 uniform vec2 u_seed2;
 
@@ -126,10 +125,7 @@ Hit ShapeCast(Ray ray, Shape shape) {
 }
 
 vec3 getSky(vec3 rd){
-    vec2 uv = vec2(atan(rd.x, rd.z), asin(-rd.y)*2.)/3.14159265;
-    uv = uv*0.5-0.5;
-    vec3 col = texture2D(skyTexture, uv).rgb;
-    return col;
+    return vec3(0.5,0.5,0.5);
 }
 
 Hit RayCast(inout Ray ray) {
