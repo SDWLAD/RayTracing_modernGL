@@ -74,7 +74,7 @@ class Engine:
         self.prog['u_seed1'] = np.random.rand(2)
         self.prog['u_seed2'] = np.random.rand(2)
 
-        self.prog['sample_part'] = 2
+        self.prog['sample_part'] = 1
 
         self.camera.update()
 
